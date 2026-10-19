@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>To do</title>
+  <meta name="theme-color" content="#EEF1F4" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#12171E" media="(prefers-color-scheme: dark)">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- First run: connect to the private task repo -->
+  <main id="setup" hidden>
+    <h1>Connect your list</h1>
+    <p class="lede">This app reads and updates the task list in your private GitHub repo. The token stays on this phone.</p>
+    <form id="setup-form" autocomplete="off">
+      <label>Task repo
+        <input id="setup-repo" name="repo" value="swagbot5000/todo-nag" spellcheck="false" autocapitalize="off" required>
+      </label>
+      <label>GitHub token
+        <input id="setup-token" name="token" type="password" placeholder="github_pat_…" spellcheck="false" autocapitalize="off" required>
+      </label>
+      <p class="hint">Use a fine-grained token limited to that repo, with <b>Actions: Read and write</b> and <b>Contents: Read-only</b>. The one from your phone shortcuts works.</p>
+      <button class="primary" type="submit">Connect</button>
+      <p id="setup-error" class="error" role="alert"></p>
+    </form>
+    <div id="setup-who" hidden>
+      <h2>Who's using this phone?</h2>
+      <div id="setup-people" class="people"></div>
+    </div>
+  </main>
+
+  <!-- Main list -->
+  <div id="app" hidden>
+    <header class="top">
+      <div class="title">
+        <h1 id="day">Today</h1>
+        <button id="sync" class="sync" type="button" aria-live="polite"><span class="dot"></span><span id="sync-text">Loading</span></button>
+      </div>
+      <button id="open-settings" class="icon-btn" type="button" aria-label="Settings">
+        <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><circle cx="12" cy="5" r="2" fill="currentColor"/><circle cx="12" cy="12" r="2" fill="currentColor"/><circle cx="12" cy="19" r="2" fill="currentColor"/></svg>
+      </button>
+    </header>
+
+    <form id="composer" class="composer" autocomplete="off">
+      <div class="entry">
+        <input id="new-title" enterkeyhint="send" placeholder="Add a task" aria-label="New task">
+        <button id="add-btn" class="add" type="submit" aria-label="Add task">
+          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6z"/></svg>
+        </button>
+      </div>
+      <div class="opts">
+        <div class="seg" role="radiogroup" aria-label="Priority" data-field="priority">
+          <button type="button" data-v="high">High</button><button type="button" data-v="med">Med</button><button type="button" data-v="low">Low</button>
+        </div>
+        <div class="seg" role="radiogroup" aria-label="For" data-field="to" id="seg-to"></div>
+        <div class="seg" role="radiogroup" aria-label="Due" data-field="due">
+          <button type="button" data-v="">Auto</button><button type="button" data-v="today">Today</button><button type="button" data-v="tomorrow">Tmrw</button><button type="button" data-v="pick" id="due-pick">Date…</button>
+        </div>
+        <input id="due-date" type="date" class="visually-hidden" tabindex="-1" aria-hidden="true">
+      </div>
+    </form>
+
+    <p id="banner" class="banner" role="alert" hidden></p>
+    <main id="list" class="list"></main>
+  </div>
+
+  <!-- Task details -->
+  <dialog id="sheet" class="sheet">
+    <form method="dialog" class="sheet-body">
+      <div class="grab" aria-hidden="true"></div>
+      <h2 id="sheet-title"></h2>
+      <p id="sheet-meta" class="meta"></p>
+      <div class="group"><span class="glabel">Snooze</span>
+        <div class="seg wide" id="sheet-snooze">
+          <button type="button" data-v="1">1 day</button><button type="button" data-v="3">3 days</button><button type="button" data-v="7">1 week</button>
+        </div>
+      </div>
+      <div class="group"><span class="glabel">Priority</span>
+        <div class="seg wide" id="sheet-prio">
+          <button type="button" data-v="high">High</button><button type="button" data-v="med">Med</button><button type="button" data-v="low">Low</button>
+        </div>
+      </div>
+      <div class="group"><span class="glabel">For</span>
+        <div class="seg wide" id="sheet-who"></div>
+      </div>
+      <div class="sheet-actions">
+        <button type="button" id="sheet-delete" class="danger">Delete task</button>
+        <button type="button" id="sheet-done" class="primary">Mark done</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Settings -->
+  <dialog id="settings" class="sheet">
+    <form method="dialog" class="sheet-body">
+      <div class="grab" aria-hidden="true"></div>
+      <h2>Settings</h2>
+      <p class="meta" id="settings-info"></p>
+      <div class="stack">
+        <button type="button" id="settings-person">Switch person</button>
+        <button type="button" id="settings-refresh">Rebuild my list on GitHub</button>
+        <a id="settings-actions" target="_blank" rel="noopener">Open GitHub Actions</a>
+        <button type="button" id="settings-signout" class="danger">Forget token on this phone</button>
+      </div>
+      <button class="primary" value="close">Close</button>
+    </form>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" hidden><span id="toast-text"></span><button id="toast-undo" type="button">Undo</button></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
